@@ -1,0 +1,14 @@
+# 1. Prevent exposing the core application files if the server document root is misconfigured
+# This redirects all traffic targeting the root folder directly into the /public folder
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+# 2. Block direct access to hidden files and sensitive project files
+<FilesMatch "(^\.|composer\.json|composer\.lock|.*\.md)">
+    Require all denied
+</FilesMatch>
+
+# 3. Disable directory listing at the root level
+Options -Indexes

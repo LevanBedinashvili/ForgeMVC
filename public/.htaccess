@@ -1,0 +1,41 @@
+<IfModule mod_rewrite.c>
+    <IfModule mod_negotiation.c>
+        # Disable MultiViews and directory indexing (Security improvement)
+        Options -MultiViews -Indexes
+    </IfModule>
+
+    RewriteEngine On
+
+    # Handle Authorization Header
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # Redirect Trailing Slashes If Not A Folder
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_URI} (.+)/$
+    RewriteRule ^ %1 [L,R=301]
+
+    # Prevent direct execution of any other .php files in the public directory (stops backdoor uploads)
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteCond %{REQUEST_URI} \.php$
+    RewriteCond %{REQUEST_URI} !/index\.php$
+    RewriteRule ^ - [R=404,L]
+
+    # Send All Requests To Front Controller (index.php)
+    # Ensure they aren't treating existing files (like CSS/JS) or directories as a route
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^ index.php [L]
+</IfModule>
+
+# Add core security headers to all responses
+<IfModule mod_headers.c>
+    # Prevent Clickjacking
+    Header always set X-Frame-Options "SAMEORIGIN"
+    # Prevent MIME type sniffing
+    Header always set X-Content-Type-Options "nosniff"
+    # Enable Browser XSS filter
+    Header always set X-XSS-Protection "1; mode=block"
+    # Hide server/PHP signature (if mod_headers can catch it)
+    Header always unset X-Powered-By
+</IfModule>

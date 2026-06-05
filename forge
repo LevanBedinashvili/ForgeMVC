@@ -1,0 +1,103 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+define('BASE_PATH', __DIR__ . '/');
+
+require BASE_PATH . 'vendor/autoload.php';
+
+// Load environment configuration
+Core\Config::load(BASE_PATH . '.env');
+
+$command = $argv[1] ?? null;
+
+if ($command === 'migrate') {
+    try {
+        $migrator = new Core\Migrator();
+        $migrator->migrate();
+    } catch (\PDOException $e) {
+        echo "Database Connection Error: " . $e->getMessage() . "\n";
+        exit(1);
+    } catch (\Exception $e) {
+        echo "Error: " . $e->getMessage() . "\n";
+        exit(1);
+    }
+} elseif ($command === 'make:migration') {
+    $name = $argv[2] ?? null;
+    if (!$name) {
+        echo "Error: Migration name required.\n";
+        exit(1);
+    }
+
+    $filename = date('Y_m_d_His') . '_' . $name . '.php';
+    $filepath = BASE_PATH . 'database/migrations/' . $filename;
+
+    $content = <<<PHP
+<?php
+
+return new class {
+    public function up(\PDO \$pdo): void
+    {
+        // \$sql = "CREATE TABLE ...";
+        // \$pdo->exec(\$sql);
+    }
+
+    public function down(\PDO \$pdo): void
+    {
+        // \$sql = "DROP TABLE ...";
+        // \$pdo->exec(\$sql);
+    }
+};
+PHP;
+
+    file_put_contents($filepath, $content);
+    echo "Created migration: {$filename}\n";
+} elseif ($command === 'queue:work') {
+    echo "Starting queue worker...\n";
+    $pdo = Core\Database::getConnection();
+
+    while (true) {
+        $pdo->beginTransaction();
+
+        $sql = "SELECT * FROM jobs WHERE status = 'pending' ORDER BY id ASC LIMIT 1 FOR UPDATE";
+        $stmt = $pdo->query($sql);
+        $jobRecord = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$jobRecord) {
+            $pdo->rollBack();
+            sleep(2);
+            continue;
+        }
+
+        $updateSql = "UPDATE jobs SET status = 'processing', attempts = attempts + 1 WHERE id = :id";
+        $updateStmt = $pdo->prepare($updateSql);
+        $updateStmt->execute(['id' => $jobRecord['id']]);
+        
+        $pdo->commit();
+
+        try {
+            /** @var \Core\Contracts\JobInterface $job */
+            $job = unserialize($jobRecord['payload']);
+            
+            echo "Processing Job ID: {$jobRecord['id']}\n";
+            $job->handle();
+
+            $deleteStmt = $pdo->prepare("DELETE FROM jobs WHERE id = :id");
+            $deleteStmt->execute(['id' => $jobRecord['id']]);
+            
+            echo "Successfully processed Job ID: {$jobRecord['id']}\n";
+        } catch (\Throwable $e) {
+            \Core\Log::error("Job failed: " . $e->getMessage(), ['job_id' => $jobRecord['id']]);
+            echo "Job ID {$jobRecord['id']} failed: {$e->getMessage()}\n";
+            
+            $failStmt = $pdo->prepare("UPDATE jobs SET status = 'failed' WHERE id = :id");
+            $failStmt->execute(['id' => $jobRecord['id']]);
+        }
+    }
+} else {
+    echo "Usage:\n";
+    echo "  php forge migrate\n";
+    echo "  php forge make:migration <name>\n";
+    echo "  php forge queue:work\n";
+}
