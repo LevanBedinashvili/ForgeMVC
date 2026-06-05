@@ -23,8 +23,8 @@ A lightweight, custom PHP MVC framework built from scratch, inspired by Laravel.
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/your-username/project-breef.git
-   cd project-breef
+   git clone https://github.com/LevanBedinashvili/ForgeMVC.git
+   cd ForgeMVC
    ```
 
 2. **Install dependencies:**
