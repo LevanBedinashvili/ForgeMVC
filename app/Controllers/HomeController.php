@@ -20,8 +20,8 @@ class HomeController extends Controller
     public function index(): string
     {
         return $this->render('home/index', [
-            'title' => 'Home - Mini-Laravel',
-            'name'  => 'World',
+            'title' => 'Home - ForgeMVC',
+            'name' => 'World',
         ]);
     }
 
@@ -34,8 +34,8 @@ class HomeController extends Controller
         $greeting = $this->greeter->greet($name);
 
         return $this->render('home/index', [
-            'title' => 'Hello - Mini-Laravel',
-            'name'  => $name,
+            'title' => 'Hello - ForgeMVC',
+            'name' => $name,
             'greeting' => $greeting,
         ]);
     }

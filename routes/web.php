@@ -11,7 +11,7 @@ use Core\Router;
 
 // Basic closure route
 Router::get('/', function () {
-    return 'Welcome to Mini-Laravel (ForgeMVC)!';
+    return 'Welcome to ForgeMVC (ForgeMVC)!';
 });
 
 // Route with a dynamic parameter

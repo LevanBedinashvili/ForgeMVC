@@ -1,9 +1,9 @@
 <?php
 
 /**
- * Mini-Laravel - A lightweight custom PHP framework
+ * ForgeMVC - A lightweight custom PHP framework
  * 
- * @package  Mini-Laravel
+ * @package  ForgeMVC
  */
 
 declare(strict_types=1);
