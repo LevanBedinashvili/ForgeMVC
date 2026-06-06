@@ -76,9 +76,11 @@ class Csrf
             return;
         }
 
-        $submittedToken = Request::input('_csrf');
+        $submittedToken = $_POST['_csrf'] ?? $_GET['_csrf'] ?? null;
 
         if (!static::verify($submittedToken)) {
+            $stored = static::token();
+            file_put_contents(BASE_PATH . 'csrf_error.log', "CSRF Failed. Submitted: $submittedToken | Stored: $stored | Method: $method\n", FILE_APPEND);
             throw new \RuntimeException('CSRF token validation failed.', 403);
         }
     }
